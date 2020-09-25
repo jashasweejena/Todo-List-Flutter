@@ -1,32 +1,99 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:notesfreecodecamp/screens/home.dart';
+import 'package:notesfreecodecamp/screens/login.dart';
+import 'package:notesfreecodecamp/services/auth.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+  // Create the initilization Future outside of `build`:
+  final Future<FirebaseApp> _initialization = Firebase.initializeApp();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-        // This makes the visual density adapt to the platform that you run
-        // the app on. For desktop platforms, the controls will be smaller and
-        // closer together (more dense) than on mobile platforms.
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(),
+      home: FutureBuilder(
+        // Initialize FlutterFire:
+        future: _initialization,
+        builder: (context, snapshot) {
+          // Check for errors
+          if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Text(
+                  'Error',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            );
+          }
+
+          // Once complete, show your application
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Root();
+          }
+
+          // Otherwise, show something whilst waiting for initialization to complete
+          return Scaffold(
+            body: Center(
+              child: Column(
+                children: [
+                  Text('Loading...'),
+                  SizedBox(
+                    height: 10.0,
+                  ),
+                  CircularProgressIndicator(),
+                ],
+              ),
+            ),
+          );
+        },
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+    );
+  }
+}
+
+class Root extends StatefulWidget {
+  @override
+  _RootState createState() => _RootState();
+}
+
+class _RootState extends State<Root> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream: Auth(auth: _auth).user,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.active) {
+          if (snapshot.data?.uid == null) {
+            return Login(
+              auth: _auth,
+              firestore: _firestore,
+            );
+          } else {
+            return Home(
+              auth: _auth,
+              firestore: _firestore,
+            );
+          }
+        } else {
+          return Scaffold(
+            body: Center(
+              child: Text('Loading...'),
+            ),
+          );
+        }
+      },
     );
   }
 }
