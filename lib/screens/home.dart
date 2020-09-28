@@ -24,6 +24,7 @@ class _HomeState extends State<Home> {
         title: const Text("Todo App"),
         actions: [
           IconButton(
+            key: const ValueKey('signOut'),
             icon: const Icon(Icons.exit_to_app),
             onPressed: () => Auth(auth: widget.auth).signOut(),
           )
@@ -46,10 +47,12 @@ class _HomeState extends State<Home> {
                 children: [
                   Expanded(
                     child: TextFormField(
+                      key: const ValueKey('addField'),
                       controller: _todoController,
                     ),
                   ),
                   IconButton(
+                      key: const ValueKey('addButton'),
                       icon: const Icon(Icons.add),
                       onPressed: () {
                         if (_todoController.text != null) {
